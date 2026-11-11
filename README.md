@@ -4,23 +4,45 @@
 
 # Sentiment Analysis of Movie Reviews (with Slang)
 
-A sentiment classifier that labels movie reviews as positive or negative. It starts from a pre-trained Hugging Face model, measures how well that model copes with informal, slang-heavy and sarcastic reviews, fine-tunes it, and serves it in a Streamlit web app where anyone can type a review and see the prediction.
+A sentiment classifier that labels movie reviews as positive or negative. It starts from a pre-trained Hugging Face model, evaluates it on IMDB reviews, tests how it copes with informal, slang-heavy and sarcastic reviews, fine-tunes it, and serves it in a Streamlit web app where anyone can type a review and see the prediction.
 
-Live app: https://sentiment-analysis-imdb-web-app.streamlit.app
+Live app: [sentiment-analysis-imdb-web-app.streamlit.app](https://sentiment-analysis-imdb-web-app.streamlit.app)\
+Model on the Hub: [gatemediang/distilbert-slang-sentiment](https://huggingface.co/gatemediang/distilbert-slang-sentiment)
 
-Model on the Hub: https://huggingface.co/gatemediang/distilbert-slang-sentiment
+## Workflow
+
+| Stage | Notebook | What it does |
+|---|---|---|
+| 1. Baseline evaluation | [`notebooks/sentiment_analysis.ipynb`](notebooks/sentiment_analysis.ipynb) | Scores the pre-trained model on 1,000 IMDB test reviews with accuracy, a classification report, a confusion matrix heatmap and an error analysis |
+| 2. Fine-tuning and comparison | [`notebooks/imdb_sentiment_analysis_fine_tuned.ipynb`](notebooks/imdb_sentiment_analysis_fine_tuned.ipynb) | Cleans the slang dataset, fine-tunes on slang mixed with IMDB reviews, pushes the model to the Hub, and compares before and after |
+| 3. Deployment | [`app.py`](app.py) | Streamlit app that loads the fine-tuned model from the Hub |
+
+Both notebooks open directly in Google Colab from the badge at the top of each.
 
 ## Model
 
-The base model is https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english
+The base model is [distilbert-base-uncased-finetuned-sst-2-english](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english), a 67M-parameter DistilBERT already trained for binary sentiment on SST-2. It handles standard English well but can misread slang ("this slapped", "it was mid"), sarcasm ("Oh great another superhero movie") and mixed reviews ("Rough start but it got so good").
 
-a 67M-parameter DistilBERT already trained for binary sentiment on SST-2. It handles standard English well but can misread slang ("this slapped", "it was mid"), sarcasm ("Oh great another superhero movie") and mixed reviews ("Rough start but it got so good").
+The deployed model was fine-tuned on [`data/slang_reviews.csv`](data/slang_reviews.csv), 341 hand-labelled reviews (173 positive, 168 negative) covering Gen Z slang, internet acronyms such as GOAT, NGL and TBH, sarcasm and contrastive sentences, mixed with 800 reviews from the IMDB training set.
 
-The final model was fine-tuned on `data/slang_reviews.csv` (341 hand-labelled reviews covering Gen Z slang, internet acronyms such as GOAT, NGL and TBH, sarcasm and contrastive sentences) mixed with 800 reviews from the IMDB training set. Setup: 80/20 split of the slang data (272 train / 69 test, seed 42), IMDB reviews added to the training side only, 2 epochs, batch size 16, learning rate 2e-5, max length 256 with dynamic padding.
+Training setup: 80/20 split of the slang data (272 train / 69 test, seed 42), IMDB reviews added to the training side only so the test set stays pure slang, 1,072 training examples in total, 2 epochs, batch size 16, learning rate 2e-5, 15 warmup steps, max length 256 with dynamic padding.
 
 ## Results
 
-Both models were scored on the same 69 held-out slang reviews and on 500 random reviews from the IMDB test set, which checks that learning slang didn't damage performance on ordinary reviews.
+### Baseline (stage 1)
+
+On 1,000 randomly sampled IMDB test reviews (512 negative, 488 positive), the pre-trained model scored 88.1% accuracy.
+
+| Class | Precision | Recall | F1 | Support |
+|---|---|---|---|---|
+| Negative | 0.87 | 0.90 | 0.89 | 512 |
+| Positive | 0.89 | 0.86 | 0.88 | 488 |
+
+The confusion matrix showed a pessimistic bias: 13.9% of positive reviews were labelled negative, against 10.0% of negative reviews labelled positive. The error analysis traced many confident mistakes to reviews that open positively and turn negative, and to unusual phrasing and slang.
+
+### Before and after fine-tuning (stage 2)
+
+Both models were scored on the same 69 held-out slang reviews and on 500 random IMDB test reviews, which checks that learning slang didn't damage performance on ordinary reviews.
 
 | Accuracy | Slang test (69) | IMDB sample (500) |
 |---|---|---|
@@ -30,13 +52,13 @@ Both models were scored on the same 69 held-out slang reviews and on 500 random 
 
 ![Confusion matrices before and after fine-tuning](images/confusion_matrices.png)
 
-Full classification reports are in the notebook.
+On the IMDB sample, the deployed model reduced the baseline's pessimistic bias: positive reviews called negative fell from 34 to 29, and the errors are now split almost evenly between the classes (25 false positives, 29 false negatives). Precision and recall are 0.89 to 0.90 for both classes.
 
 ### What the experiments showed
 
-The first fine-tunes trained on slang reviews alone. Slang accuracy barely moved, while IMDB accuracy fell by 2 to 3 points, and the confusion matrices showed why: positive IMDB reviews misclassified as negative rose from 34 to as many as 59. The model had learned to distrust praise.
+The first fine-tunes trained on slang reviews alone. Slang accuracy barely moved, while IMDB accuracy fell by 2 to 3 points, and the confusion matrices showed why: positive IMDB reviews misclassified as negative rose from 34 to as many as 59. Fine-tuning had made the existing pessimistic bias worse.
 
-Two causes were tested. Removing sarcastic reviews whose labels can't be inferred from the text (for example "Absolutely brilliant work truly inspiring" labelled negative) did not fix the drift on its own. Mixing ordinary IMDB reviews into training did: the deployed model keeps IMDB accuracy at 89.2% with errors split evenly between the classes (25 false positives, 29 false negatives).
+Two fixes were tested. Removing sarcastic reviews whose labels can't be inferred from the text (for example "Absolutely brilliant work truly inspiring" labelled negative) did not stop the drift on its own. Mixing ordinary IMDB reviews into training did.
 
 Fine-tuning did not improve slang accuracy beyond the base model. With 69 test reviews, one review is worth 1.4 points, so differences of one or two reviews between runs are within noise. A larger labelled slang set would be the next step.
 
@@ -60,24 +82,27 @@ Guard rails:
 ## Project structure
 
 ```
-├── app.py                         Streamlit app
-├── requirements.txt               App dependencies (used by Streamlit Community Cloud)
-├── .streamlit/config.toml         Production settings
+sentiment-analysis-imdb/
+├── .streamlit/
+│   └── config.toml                                Production settings (hides tracebacks, disables telemetry)
 ├── data/
-│   └── slang_reviews.csv          Fine-tuning dataset
+│   └── slang_reviews.csv                          Fine-tuning dataset (341 labelled reviews)
+├── images/
+│   ├── confusion_matrices.png                     Before/after confusion matrix heatmaps
+│   └── hero.png                                   README banner
 ├── notebooks/
-│   ├── imdb_sentiment_analysis_fine_tuned.ipynb   Training notebook (Colab)
-│   ├── colab_cells_push_and_evaluate.py           Hub upload and before/after evaluation
-│   ├── colab_cells_retrain.py                     Final training run (slang + IMDB mix)
-│   └── requirements-notebook.txt                  Notebook dependencies
-└── images/
-    └── confusion_matrices.png
+│   ├── sentiment_analysis.ipynb                   Stage 1: baseline evaluation on IMDB
+│   └── imdb_sentiment_analysis_fine_tuned.ipynb   Stage 2: fine-tuning, Hub upload, before/after evaluation
+├── .gitignore
+├── app.py                                         Streamlit app
+├── README.md
+└── requirements.txt                               App dependencies (used by Streamlit Community Cloud)
 ```
 
 ## Run the app locally
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/sentiment-analysis-imdb.git
+git clone https://github.com/gatemediang/sentiment-analysis-imdb.git
 cd sentiment-analysis-imdb
 python -m venv .venv
 .venv\Scripts\activate        # Windows
@@ -88,6 +113,7 @@ streamlit run app.py
 
 Optional settings (environment variables or `.streamlit/secrets.toml`): `MODEL_ID`, `MODEL_REVISION` (pin a Hub commit), `HF_TOKEN` (only for a private model repo), `LOG_TO_FILE=1` (rotating log file when running locally).
 
-## Reproduce the training
+## Reproduce the results
 
-Open `notebooks/imdb_sentiment_analysis_fine_tuned.ipynb` in Google Colab with a GPU runtime. Log in to the Hub (cell 1 of `colab_cells_push_and_evaluate.py`), run the cells in `colab_cells_retrain.py`, then cells 4 and 5 of `colab_cells_push_and_evaluate.py` for the evaluation and confusion matrices.
+1. Open `notebooks/sentiment_analysis.ipynb` in Colab and run all cells for the baseline evaluation. It needs no login or uploads.
+2. Open `notebooks/imdb_sentiment_analysis_fine_tuned.ipynb` in Colab with a GPU runtime. Add a Hugging Face token with write access as a Colab secret named `HF_TOKEN` (with notebook access switched on), change `REPO_ID` to your own Hub repo, and run the cells in order, uploading `data/slang_reviews.csv` when asked.
