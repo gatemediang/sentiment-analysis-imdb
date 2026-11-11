@@ -1,0 +1,11 @@
+[client]
+# Hide Python tracebacks from visitors; errors are still logged server-side
+showErrorDetails = false
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+# Reject oversized websocket messages (inputs are capped at 5,000 characters anyway)
+maxMessageSize = 50

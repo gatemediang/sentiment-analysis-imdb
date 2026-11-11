@@ -1,0 +1,17 @@
+# Model files live on the Hugging Face Hub, not in Git
+fine_tuned_sentiment_model/
+*.zip
+*.safetensors
+*.bin
+results/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Secrets
+.env
+.streamlit/secrets.toml

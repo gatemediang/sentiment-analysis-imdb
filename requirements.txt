@@ -1,0 +1,9 @@
+# Libraries the Streamlit app needs. Streamlit Community Cloud installs this file.
+
+# CPU-only PyTorch: the default Linux wheel bundles several GB of CUDA libraries
+# that a CPU-only Streamlit server can't use.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+streamlit>=1.40
+transformers>=4.44
+torch>=2.2
