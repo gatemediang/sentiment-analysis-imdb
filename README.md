@@ -7,6 +7,7 @@
 A sentiment classifier that labels movie reviews as positive or negative. It starts from a pre-trained Hugging Face model, evaluates it on IMDB reviews, tests how it copes with informal, slang-heavy and sarcastic reviews, fine-tunes it, and serves it in a Streamlit web app where anyone can type a review and see the prediction.
 
 Live app: [sentiment-analysis-imdb-web-app.streamlit.app](https://sentiment-analysis-imdb-web-app.streamlit.app)\
+
 Model on the Hub: [gatemediang/distilbert-slang-sentiment](https://huggingface.co/gatemediang/distilbert-slang-sentiment)
 
 ## Workflow
@@ -21,7 +22,9 @@ Both notebooks open directly in Google Colab from the badge at the top of each.
 
 ## Model
 
-The base model is [distilbert-base-uncased-finetuned-sst-2-english](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english), a 67M-parameter DistilBERT already trained for binary sentiment on SST-2. It handles standard English well but can misread slang ("this slapped", "it was mid"), sarcasm ("Oh great another superhero movie") and mixed reviews ("Rough start but it got so good").
+The base model is [distilbert-base-uncased-finetuned-sst-2-english](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english), 
+
+a 67M-parameter DistilBERT already trained for binary sentiment on SST-2. It handles standard English well but can misread slang ("this slapped", "it was mid"), sarcasm ("Oh great another superhero movie") and mixed reviews ("Rough start but it got so good").
 
 The deployed model was fine-tuned on [`data/slang_reviews.csv`](data/slang_reviews.csv), 341 hand-labelled reviews (173 positive, 168 negative) covering Gen Z slang, internet acronyms such as GOAT, NGL and TBH, sarcasm and contrastive sentences, mixed with 800 reviews from the IMDB training set.
 
