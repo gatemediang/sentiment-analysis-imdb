@@ -2,7 +2,7 @@
 
 A sentiment classifier that labels movie reviews as positive or negative. It starts from a pre-trained Hugging Face model, measures how well that model copes with informal, slang-heavy and sarcastic reviews, fine-tunes it, and serves it in a Streamlit web app where anyone can type a review and see the prediction.
 
-Live app: [YOUR_STREAMLIT_URL](YOUR_STREAMLIT_URL)
+Live app: https://sentiment-analysis-imdb-web-app.streamlit.app/
 Model on the Hub: [gatemediang/distilbert-slang-sentiment](https://huggingface.co/gatemediang/distilbert-slang-sentiment)
 
 ## Model
