@@ -6,13 +6,15 @@
 
 A sentiment classifier that labels movie reviews as positive or negative. It starts from a pre-trained Hugging Face model, measures how well that model copes with informal, slang-heavy and sarcastic reviews, fine-tunes it, and serves it in a Streamlit web app where anyone can type a review and see the prediction.
 
-Live app: https://sentiment-analysis-imdb-web-app.streamlit.app\
+Live app: https://sentiment-analysis-imdb-web-app.streamlit.app
 
 Model on the Hub: https://huggingface.co/gatemediang/distilbert-slang-sentiment
 
 ## Model
 
-The base model is https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english\, a 67M-parameter DistilBERT already trained for binary sentiment on SST-2. It handles standard English well but can misread slang ("this slapped", "it was mid"), sarcasm ("Oh great another superhero movie") and mixed reviews ("Rough start but it got so good").
+The base model is https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english
+
+a 67M-parameter DistilBERT already trained for binary sentiment on SST-2. It handles standard English well but can misread slang ("this slapped", "it was mid"), sarcasm ("Oh great another superhero movie") and mixed reviews ("Rough start but it got so good").
 
 The final model was fine-tuned on `data/slang_reviews.csv` (341 hand-labelled reviews covering Gen Z slang, internet acronyms such as GOAT, NGL and TBH, sarcasm and contrastive sentences) mixed with 800 reviews from the IMDB training set. Setup: 80/20 split of the slang data (272 train / 69 test, seed 42), IMDB reviews added to the training side only, 2 epochs, batch size 16, learning rate 2e-5, max length 256 with dynamic padding.
 
