@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/hero.png" alt="Movie review sentiment analyzer" width="100%">
+</p>
+
 # Sentiment Analysis of Movie Reviews (with Slang)
 
 A sentiment classifier that labels movie reviews as positive or negative. It starts from a pre-trained Hugging Face model, measures how well that model copes with informal, slang-heavy and sarcastic reviews, fine-tunes it, and serves it in a Streamlit web app where anyone can type a review and see the prediction.
